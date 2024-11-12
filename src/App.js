@@ -23,3 +23,7 @@ function App() {
 }
 
 export default App;
+
+const login = (username) => {
+  localStorage.setItem("username", username);
+};
