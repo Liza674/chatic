@@ -6,13 +6,14 @@ const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
 
     const handleLogin = () => {
-        if (username) {
-            onLogin(username);  // Pass the username to the App component
+        if (username.trim()) {
+            onLogin(username);
         }
     };
 
     return (
         <div className="login-container">
+            <h2 className="login-title">Welcome to Chatic</h2>
             <input
                 type="text"
                 placeholder="Enter your username"
