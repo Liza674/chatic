@@ -1,71 +1,193 @@
-// // src/components/Chat.js
-// import React, { useState, useEffect } from 'react';
-// import io from 'socket.io-client';
-// import './chat.css';
-
-// const randomColor = () => '#' + Math.floor(Math.random()*16777215).toString(16);
-
-// const socket = io('http://localhost:3000'); 
-
-// const Chat = ({ username }) => {
-//     const [message, setMessage] = useState('');
-//     const [chatHistory, setChatHistory] = useState([]);
-
-//     useEffect(() => {
-//         socket.emit('join', username);
-//         socket.on('message', (msg) => {
-//             setChatHistory((prev) => [...prev, msg]);
-//         });
-
-//         return () => socket.off('message');
-//     }, [username]);
-
-//     const sendMessage = () => {
-//         if (message) {
-//             socket.emit('sendMessage', { username, text: message });
-//             setMessage('');
-//         }
-//     };
-
-//     return (
-//         <div>
-//             <div className="chat-history">
-//                 {chatHistory.map((msg, index) => (
-//                     <p key={index}><strong>{msg.username}:</strong> {msg.text}</p>
-//                 ))}
-//             </div>
-//             <input
-//                 type="text"
-//                 value={message}
-//                 onChange={(e) => setMessage(e.target.value)}
-//                 placeholder="Type a message"
-//             />
-//             <button onClick={sendMessage}>Send</button>
-//         </div>
-//     );
-// };
-
-// export default Chat;
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './chat.css';
 
-const Chat = ({ username, onLogout }) => {
+const Chat = ({ username, otherUsername, onLogout }) => {
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [socket, setSocket] = useState(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const [image, setImage] = useState(null);
+    const [isChatEnded, setIsChatEnded] = useState(false); // Track whether chat is ended or ongoing
+    const [viewingHistory, setViewingHistory] = useState(false); // Track if user is viewing history
+
+    // Create a unique key for this conversation using both usernames
+    const conversationKey = `${username}-${otherUsername}`;
+
+    useEffect(() => {
+        // Load chat history from localStorage if the chat is resumed
+        if (!isChatEnded && !viewingHistory) {
+            const savedMessages = JSON.parse(localStorage.getItem(conversationKey)) || [];
+            setMessages(savedMessages); // Only load history when chat is resumed
+        }
+
+        // Initialize WebSocket
+        const ws = new WebSocket('ws://your-websocket-url');
+        setSocket(ws);
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'message') {
+                setMessages((prevMessages) => [...prevMessages, data]);
+            } else if (data.type === 'typing') {
+                setIsTyping(data.username !== username && data.isTyping);
+            }
+        };
+
+        return () => ws.close();
+    }, [username, otherUsername, isChatEnded, viewingHistory]);
+
+    useEffect(() => {
+        // Save chat history to localStorage when messages change and chat is ongoing
+        if (!isChatEnded && !viewingHistory) {
+            localStorage.setItem(conversationKey, JSON.stringify(messages));
+        }
+    }, [messages, conversationKey, isChatEnded, viewingHistory]);
+
+    const sendMessage = () => {
+        if (newMessage.trim()) {
+            const message = {
+                type: 'message',
+                username,
+                text: newMessage,
+                timestamp: new Date().toLocaleString()
+            };
+            socket.send(JSON.stringify(message));
+            setMessages([...messages, message]);
+            setNewMessage('');
+        }
+    };
+
+    const deleteMessage = (index) => {
+        const updatedMessages = [...messages];
+        updatedMessages[index] = { ...updatedMessages[index], text: 'Message Deleted', isDeleted: true }; // Mark as deleted
+        setMessages(updatedMessages);
+        localStorage.setItem(conversationKey, JSON.stringify(updatedMessages)); // Save updated history
+    };
+
+    const handleDeleteChat = () => {
+        const deletedMessages = messages.map((msg) => ({
+            ...msg,
+            text: 'Message Deleted',
+            isDeleted: true
+        }));
+        setMessages(deletedMessages);
+        localStorage.setItem(conversationKey, JSON.stringify(deletedMessages));
+    };
+
+    const handleImageUpload = (event) => {
+        const file = event.target.files[0];
+        if (file && ['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+            setImage(URL.createObjectURL(file));
+        }
+    };
+
+    const sendImage = () => {
+        if (image && socket) {
+            const imageMessage = { type: 'image', username, image, timestamp: new Date().toLocaleString() };
+            socket.send(JSON.stringify(imageMessage));
+            setMessages([...messages, imageMessage]);
+            setImage(null);
+        }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('username');
+        onLogout();
+    };
+
+    // Handle end chat
+    const endChat = () => {
+        setIsChatEnded(true); // Mark the chat as ended
+        localStorage.setItem(conversationKey, JSON.stringify(messages)); // Save the final chat history
+    };
+
+    // Handle resume chat
+    const resumeChat = () => {
+        setIsChatEnded(false); // Mark the chat as ongoing
+        setViewingHistory(false); // Make sure user is not viewing history
+        const savedMessages = JSON.parse(localStorage.getItem(conversationKey)) || [];
+        setMessages(savedMessages); // Load the previous chat history when resumed
+    };
+
+    // Handle view history
+    const viewHistory = () => {
+        setViewingHistory(true); // Mark that the user is viewing the history
+    };
+
     return (
         <div className="chat-container">
             <header className="chat-header">
-                <h2>Welcome, {username}</h2>
-                <button onClick={onLogout} className="logout-button">Logout</button>
+                <div className="welcome-message">Welcome, {username}</div>
+                <button onClick={logout} className="logout-button">Logout</button>
             </header>
-            <div className="chat-messages">
-                {/* Add chat message components here */}
-            </div>
-            <div className="chat-input-container">
-                <input type="text" placeholder="Type a message..." className="chat-input" />
-                <button className="send-button">Send</button>
-            </div>
+
+            {isTyping && <div className="typing-indicator">{otherUsername} is typing...</div>}
+
+            {!isChatEnded && !viewingHistory && (
+                <div className="chat-messages">
+                    {messages.map((msg, index) => (
+                        <div key={index} className="chat-message">
+                            <strong>{msg.username}</strong>: {msg.isDeleted ? 'Message Deleted' : msg.text}
+                            {msg.image && <img src={msg.image} alt="shared" className="chat-image" />}
+                            <div className="timestamp">{msg.timestamp}</div>
+                            {!msg.isDeleted && (
+                                <button onClick={() => deleteMessage(index)} className="delete-message-button">Delete</button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {viewingHistory && (
+                <div className="chat-history">
+                    <h3>Chat History</h3>
+                    {messages.map((msg, index) => (
+                        <div key={index} className="chat-message">
+                            <strong>{msg.username}</strong>: {msg.isDeleted ? 'Message Deleted' : msg.text}
+                            {msg.image && <img src={msg.image} alt="shared" className="chat-image" />}
+                            <div className="timestamp">{msg.timestamp}</div>
+                        </div>
+                    ))}
+                    <button onClick={resumeChat} className="resume-chat-button">Resume Chat</button>
+                </div>
+            )}
+
+            {!viewingHistory && !isChatEnded && (
+                <div className="image-upload">
+                    <input type="file" accept="image/*" onChange={handleImageUpload} />
+                    {image && <img src={image} alt="preview" className="image-preview" />}
+                    <button onClick={sendImage} className="send-button">Send Image</button>
+                </div>
+            )}
+
+            {!viewingHistory && !isChatEnded && (
+                <div className="chat-input-container">
+                    <input
+                        type="text"
+                        placeholder="Type a message..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        className="chat-input"
+                    />
+                    <button onClick={sendMessage} className="send-button">Send</button>
+                </div>
+            )}
+
+            {!viewingHistory && !isChatEnded && (
+                <button onClick={endChat} className="end-chat-button">End Chat</button>
+            )}
+
+            {isChatEnded && !viewingHistory && (
+                <div className="history-buttons">
+                    <button onClick={viewHistory} className="history-button">View History</button>
+                    <button onClick={resumeChat} className="resume-chat-button">Resume Chat</button>
+                </div>
+            )}
+
+            <button onClick={handleDeleteChat} className="delete-chat-button">Delete All Chat</button>
         </div>
     );
 };
 
 export default Chat;
+
