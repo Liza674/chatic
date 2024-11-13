@@ -40,7 +40,7 @@ const Chat = ({ username, otherUsername, onLogout }) => {
         setMsgAreaColor(userMsgAreaColor); // Apply message area color
 
         // Initialize WebSocket
-        const ws = new WebSocket('ws://your-websocket-url');
+        const ws = new WebSocket('ws:http://localhost:3000');
         setSocket(ws);
 
         ws.onmessage = (event) => {
