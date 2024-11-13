@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './chat.css';
+import './chat.css'; //chat.css for style
 
 const Chat = ({ username, otherUsername, onLogout }) => {
     const [messages, setMessages] = useState([]);
