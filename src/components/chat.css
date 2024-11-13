@@ -121,13 +121,12 @@
     text-align: center;
 }
 
-/* Container for Resume and History buttons */
 .history-buttons {
     display: flex;
     flex-direction: column; /* Stack buttons vertically */
     justify-content: center;
     align-items: center;
-    gap: 10px; /* Space between buttons */
+    gap: 15px; /* Increased space between buttons */
     margin-top: 15px;
 }
 
