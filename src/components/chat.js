@@ -39,8 +39,13 @@ const Chat = ({ username, otherUsername, onLogout }) => {
         }
         setMsgAreaColor(userMsgAreaColor); // Apply message area color
 
+        // Define WebSocket URL based on environment
+        const wsUrl = process.env.NODE_ENV === 'development'
+            ? 'ws://localhost:3000'
+            : process.env.REACT_APP_WEBSOCKET_URL;
+        
         // Initialize WebSocket
-        const ws = new WebSocket('ws:http://localhost:3000');
+        const ws = new WebSocket(wsUrl);
         setSocket(ws);
 
         ws.onmessage = (event) => {
@@ -208,4 +213,3 @@ const Chat = ({ username, otherUsername, onLogout }) => {
 };
 
 export default Chat;
-
