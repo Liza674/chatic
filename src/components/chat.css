@@ -121,30 +121,54 @@
     text-align: center;
 }
 
-/* Buttons for chat history and resume chat */
+/* Container for Resume and History buttons */
 .history-buttons {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Stack buttons vertically */
     justify-content: center;
     align-items: center;
+    gap: 10px; /* Space between buttons */
+    margin-top: 15px;
 }
 
-.history-buttons button {
+/* Styles for Resume Button */
+.resume-chat-button {
     background-color: #6200EE; /* Purple button */
     color: #fff; /* White text */
     padding: 10px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px;
+    width: 100%;
+    max-width: 150px;
+    text-align: center;
+    transition: background-color 0.3s ease;
 }
 
-.history-buttons button:hover {
-    background-color: #3700B3; /* Darker purple hover */
+.resume-chat-button:hover {
+    background-color: #3700B3; /* Darker purple on hover */
+}
+
+/* Styles for History Button */
+.history-button {
+    background-color: #6200EE; /* Purple button */
+    color: #fff; /* White text */
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 150px;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.history-button:hover {
+    background-color: #3700B3; /* Darker purple on hover */
 }
 
 /* Delete and end chat buttons */
-.delete-chat-button, .end-chat-button, .resume-chat-button {
+.delete-chat-button, .end-chat-button {
     background-color: #6200EE; /* Purple button */
     color: #fff; /* White text */
     padding: 10px;
@@ -154,7 +178,7 @@
     margin-top: 10px;
 }
 
-.delete-chat-button:hover, .end-chat-button:hover, .resume-chat-button:hover {
+.delete-chat-button:hover, .end-chat-button:hover {
     background-color: #3700B3; /* Darker purple hover */
 }
 
@@ -214,6 +238,6 @@
     
     .history-buttons button {
         font-size: 14px;
-        padding: 9px;
+        padding: 8px;
     }
 }

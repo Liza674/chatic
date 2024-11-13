@@ -9,6 +9,7 @@ const Chat = ({ username, otherUsername, onLogout }) => {
     const [image, setImage] = useState(null);
     const [isChatEnded, setIsChatEnded] = useState(false);
     const [msgAreaColor, setMsgAreaColor] = useState('');
+    const [showHistory, setShowHistory] = useState(false); // State to control history visibility
 
     // Create a unique key for this conversation using both usernames
     const conversationKey = `${username}-${otherUsername}`;
@@ -126,6 +127,11 @@ const Chat = ({ username, otherUsername, onLogout }) => {
         setMessages(savedMessages); // Load the previous chat history when resumed
     };
 
+    // Toggle chat history visibility
+    const toggleHistory = () => {
+        setShowHistory(!showHistory);
+    };
+
     return (
         <div className="chat-container">
             <header className="chat-header">
@@ -152,7 +158,26 @@ const Chat = ({ username, otherUsername, onLogout }) => {
 
             {isChatEnded && (
                 <div className="chat-history">
-                    <button onClick={resumeChat} className="resume-chat-button">Resume Chat</button>
+                    <div>
+                    <button onClick={resumeChat} className="resume-chat-button">Resume Chat</button> 
+                    </div>
+                    <div>
+                    <button onClick={toggleHistory} className="history-button">
+                        {showHistory ? 'Hide History' : 'Show History'}
+                    </button>
+                    </div>
+                </div>
+            )}
+
+            {showHistory && isChatEnded && (
+                <div className="chat-history-section">
+                    {messages.map((msg, index) => (
+                        <div key={index}>
+                            <strong>{msg.username}</strong>: {msg.isDeleted ? 'Message Deleted' : msg.text}
+                            {msg.image && <img src={msg.image} alt="shared" className="chat-image" />}
+                            <div className="timestamp">{msg.timestamp}</div>
+                        </div>
+                    ))}
                 </div>
             )}
 
